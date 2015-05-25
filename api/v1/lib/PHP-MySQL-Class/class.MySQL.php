@@ -350,6 +350,7 @@ class MySQL {
     // 'Arrays' a single result
     public function arrayResult(){
         $this->arrayedResult = mysql_fetch_assoc($this->result) or die (mysql_error($this->databaseLink));
+        $this->arrayedResult = array($this->arrayedResult);
         return $this->arrayedResult;
     }
 
