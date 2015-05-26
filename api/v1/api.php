@@ -6,9 +6,21 @@ if (!array_key_exists('HTTP_ORIGIN', $_SERVER)) {
 }
 
 try {
-	$API = new MyAPI($_REQUEST['request'], $_SERVER['HTTP_ORIGIN']);
+	$requestArray = explode('/', rtrim($_REQUEST['request'], '/'));
+	$objectType = array_shift($requestArray);
+	switch ($objectType) {
+		case 'user': {
+			include_once('class.user.php');
+			$API = new User($requestArray, $_SERVER['HTTP_ORIGIN']);
+			break;
+		}
+		default: {
+			throw new Exception();
+		}
+	}
 	echo $API->processAPI();
 } catch (Exception $e) {
 	echo json_encode(Array('error' => $e->getMessage()));
+}
 
 ?>

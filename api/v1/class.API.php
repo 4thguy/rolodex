@@ -3,47 +3,57 @@
 // reference
 // http://coreymaynard.com/blog/creating-a-restful-api-with-php/
 
+// Turn off all error reporting
+error_reporting(0);
+
+require_once 'lib/PHP-MySQL-Class/class.MySQL.php';
+
 abstract class API
 {
 	/**
-	* Property: method
-	* The HTTP method this request was made in, either GET, POST, PUT or DELETE
-	*/
+	 * Property: method
+	 * The HTTP method this request was made in, either GET, POST, PUT or DELETE
+	 */
 	protected $method = '';
 	/**
-	* Property: endpoint
-	* The Model requested in the URI. eg: /files
-	*/
+	 * Property: methods
+	 * Accepted HTTP request headers for the requests, either GET, POST, PUT or DELETE
+	 */
+	protected $methods = array();
+	/**
+	 * Property: endpoint
+	 * The Model requested in the URI. eg: /files
+	 */
 	protected $endpoint = '';
 	/**
-	* Property: verb
-	* An optional additional descriptor about the endpoint, used for things that can
-	* not be handled by the basic methods. eg: /files/process
-	*/
+	 * Property: verb
+	 * An optional additional descriptor about the endpoint, used for things that can
+	 * not be handled by the basic methods. eg: /files/process
+	 */
 	protected $verb = '';
 	/**
-	* Property: args
-	* Any additional URI components after the endpoint and verb have been removed, in our
-	* case, an integer ID for the resource. eg: /<endpoint>/<verb>/<arg0>/<arg1>
-	* or /<endpoint>/<arg0>
-	*/
+	 * Property: args
+	 * Any additional URI components after the endpoint and verb have been removed, in our
+	 * case, an integer ID for the resource. eg: /<endpoint>/<verb>/<arg0>/<arg1>
+	 * or /<endpoint>/<arg0>
+	 */
 	protected $args = Array();
 	/**
-	* Property: file
-	* Stores the input of the PUT request
-	*/
-	protected $file = Null;
+	 * Property: file
+	 * Stores the input of the PUT request
+	 */
+	 protected $file = Null;
 
 	/**
-	* Constructor: __construct
-	* Allow for CORS, assemble and pre-process the data
-	*/
-	public function __construct($request) {
+	 * Constructor: __construct
+	 * Allow for CORS, assemble and pre-process the data
+	 */
+	public function __construct($requestArray) {
 		header("Access-Control-Allow-Orgin: *");
 		header("Access-Control-Allow-Methods: *");
 		header("Content-Type: application/json");
 
-		$this->args = explode('/', rtrim($request, '/'));
+		$this->args = $requestArray;
 		$this->endpoint = array_shift($this->args);
 		if (array_key_exists(0, $this->args) && !is_numeric($this->args[0])) {
 			$this->verb = array_shift($this->args);
@@ -63,26 +73,25 @@ abstract class API
 		switch($this->method) {
 			case 'DELETE':
 			case 'POST':
-			$this->request = $this->_cleanInputs($_POST);
-			break;
+				$this->requestArray = $this->_cleanInputs($_POST);
+				break;
 			case 'GET':
-			$this->request = $this->_cleanInputs($_GET);
-			break;
+				$this->requestArray = $this->_cleanInputs($_GET);
+				break;
 			case 'PUT':
-			$this->request = $this->_cleanInputs($_GET);
-			$this->file = file_get_contents("php://input");
-			break;
+				$this->requestArray = $this->_cleanInputs($_GET);
+				$this->file = file_get_contents("php://input");
+				break;
 			default:
-			$this->_response('Invalid Method', 405);
-			break;
+				$this->_response('Invalid Method', 405);
+				break;
 		}
-	}
 
-	public function processAPI() {
-		if (method_exists($this, $this->endpoint)) {
-			return $this->_response($this->{$this->endpoint}($this->args));
-		}
-		return $this->_response("No Endpoint: $this->endpoint", 404);
+		include_once('config.php');
+		$this->db = $db;
+		$this->oMySQL = new MySQL($this->db['database'], $this->db['username'], $this->db['password'], $this->db['server']);
+
+        session_start();
 	}
 
 	private function _response($data, $status = 200) {
@@ -108,8 +117,15 @@ abstract class API
 			404 => 'Not Found',   
 			405 => 'Method Not Allowed',
 			500 => 'Internal Server Error',
-			); 
+		);
 		return ($status[$code])?$status[$code]:$status[500]; 
+	}
+
+	public function processAPI() {
+		if ( (method_exists($this, $this->endpoint)) && ($this->methods[$this->endpoint] == $this->method) ) {
+			return $this->_response($this->{$this->endpoint}($this->args));
+		}
+		return $this->_response("No Endpoint: $this->method $this->endpoint", 404);
 	}
 }
 
