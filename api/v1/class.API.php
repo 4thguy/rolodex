@@ -95,8 +95,11 @@ abstract class API
 	}
 
 	private function _response($data, $status = 200) {
-		header("HTTP/1.1 " . $status . " " . $this->_requestStatus($status));
-		return json_encode($data);
+		if (!is_numeric($data)) {
+			header("HTTP/1.1 " . $status . " " . $this->_requestStatus($status));
+			return json_encode($data);
+		}
+		header("HTTP/1.1 " . $data . " " . $this->_requestStatus($data));
 	}
 
 	private function _cleanInputs($data) {
@@ -114,6 +117,7 @@ abstract class API
 	private function _requestStatus($code) {
 		$status = array(  
 			200 => 'OK',
+			401 => 'Not authorised',
 			404 => 'Not Found',   
 			405 => 'Method Not Allowed',
 			500 => 'Internal Server Error',

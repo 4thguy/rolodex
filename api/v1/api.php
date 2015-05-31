@@ -7,10 +7,10 @@ if (!array_key_exists('HTTP_ORIGIN', $_SERVER)) {
 
 try {
 	$requestArray = explode('/', rtrim($_REQUEST['request'], '/'));
-	$objectType = array_shift($requestArray);
+	$objectType = strtolower(array_shift($requestArray));
 	switch ($objectType) {
 		case 'user': {
-			include_once('class.user.php');
+			include_once('class.User.php');
 			$API = new User($requestArray, $_SERVER['HTTP_ORIGIN']);
 			break;
 		}

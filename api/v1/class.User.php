@@ -13,6 +13,7 @@ class User extends API
 			'userExists' => 'GET',
 			'login' => 'POST',
 			'logout' => 'POST',
+			'loggedIn' => 'GET',
 			'loggedInUser' => 'GET',
 			'resetPassword' => 'POST'
 			);
@@ -67,6 +68,13 @@ class User extends API
 	protected function logout() {
 		$_SESSION = array();
 		return true;
+	}
+
+	protected function loggedIn() {
+		if (array_key_exists('user_id', $_SESSION)) {
+			return 200;
+		}
+		return 401;
 	}
 
 	protected function loggedInUser() {
